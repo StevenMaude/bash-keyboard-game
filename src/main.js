@@ -6,6 +6,7 @@ import {
   getProgress,
   totalBaseline
 } from './game.js'
+import { applyReadlineShortcut } from './readlineShortcuts.js'
 
 const app = document.querySelector('#app')
 
@@ -14,6 +15,7 @@ app.innerHTML = `
     <header class="top">
       <h1>Bash Keyboard Edit Trainer</h1>
       <p>Edit each command from <strong>Start</strong> to <strong>Target</strong> using bash shortcuts.</p>
+      <small class="hint">Readline-like keys: Ctrl+A/E/B/F/U/K/W and Alt+B/F</small>
     </header>
 
     <section class="status-grid">
@@ -91,6 +93,25 @@ function render() {
 }
 
 editor.addEventListener('keydown', (event) => {
+  const shortcutResult = applyReadlineShortcut({
+    value: editor.value,
+    selectionStart: editor.selectionStart ?? 0,
+    selectionEnd: editor.selectionEnd ?? 0,
+    key: event.key,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey
+  })
+
+  if (shortcutResult) {
+    event.preventDefault()
+    incrementKeypress(game)
+    editor.value = shortcutResult.value
+    editor.setSelectionRange(shortcutResult.selectionStart, shortcutResult.selectionEnd)
+    keypressText.textContent = String(game.keypresses)
+    return
+  }
+
   const ignored = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab']
   if (!ignored.includes(event.key)) {
     incrementKeypress(game)
