@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bash Keyboard Game</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="game-header">
+      <h1><span class="prompt">$</span> Bash Keyboard Game</h1>
+      <p class="subtitle">Master bash keyboard shortcuts through practice</p>
+    </header>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="card">
+      <div class="start-content">
+        <h2>🎮 Learn Bash Shortcuts</h2>
+        <p>Practice the keyboard shortcuts that make editing on the command line fast and efficient.</p>
+        <ul>
+          <li>Edit the text to match the target using bash shortcuts</li>
+          <li>Try to match or beat the <strong>par</strong> (ideal keypresses)</li>
+          <li>10 random challenges per game</li>
+          <li>Improve your score with each attempt!</li>
+        </ul>
+        <button id="start-btn" class="btn btn-primary">▶ Start Game</button>
+
+        <div style="margin-top: 1.5rem;">
+          <button id="shortcut-toggle" class="shortcut-toggle">📖 Show Shortcut Reference</button>
+          <div id="shortcut-ref" class="hidden">
+            <div class="shortcut-grid">
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+A</span><span class="shortcut-desc">Go to start</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+E</span><span class="shortcut-desc">Go to end</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+B</span><span class="shortcut-desc">Back one char</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+F</span><span class="shortcut-desc">Forward one char</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Alt+B</span><span class="shortcut-desc">Back one word</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Alt+F</span><span class="shortcut-desc">Forward one word</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+K</span><span class="shortcut-desc">Kill to end</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+U</span><span class="shortcut-desc">Kill to start</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+W</span><span class="shortcut-desc">Kill word back</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Alt+D</span><span class="shortcut-desc">Kill word forward</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+Y</span><span class="shortcut-desc">Yank (paste)</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+T</span><span class="shortcut-desc">Transpose chars</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+D</span><span class="shortcut-desc">Delete forward</span></div>
+              <div class="shortcut-item"><span class="shortcut-key">Ctrl+H</span><span class="shortcut-desc">Delete backward</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="card hidden">
+      <div class="round-info">
+        <span id="round-counter" class="round-counter">Round 1 / 10</span>
+        <span class="keypress-info">
+          Keypresses: <span id="keypress-counter" class="count">0</span>
+          <span class="par">/ par: <span id="par-display">0</span></span>
+        </span>
+      </div>
+
+      <p id="challenge-desc" class="challenge-description"></p>
+      <p id="challenge-hint" class="challenge-hint"></p>
+
+      <div class="target-section">
+        <div class="target-label">🎯 Target</div>
+        <div id="target-text" class="target-text"></div>
+      </div>
+
+      <div class="input-section">
+        <div class="input-label">⌨️ Your Input</div>
+        <div id="input-display" class="input-display"></div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+          <span id="progress-text" class="progress-text">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Round Complete Screen -->
+    <div id="round-complete-screen" class="card hidden">
+      <div class="round-complete-content">
+        <h2>✅ Round Complete!</h2>
+        <div class="round-stats">
+          <div class="stat">
+            <div id="rc-keypresses" class="stat-value">0</div>
+            <div class="stat-label">Your Keypresses</div>
+          </div>
+          <div class="stat">
+            <div id="rc-par" class="stat-value">0</div>
+            <div class="stat-label">Par</div>
+          </div>
+        </div>
+        <p id="rc-rating" class="rating-perfect"></p>
+        <button id="next-round-btn" class="btn btn-primary">Next Round →</button>
+      </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" class="card hidden">
+      <div class="results-content">
+        <h2>🏆 Game Complete!</h2>
+        <div class="final-stats">
+          <div class="stat">
+            <div id="final-total-kp" class="stat-value">0</div>
+            <div class="stat-label">Total Keypresses</div>
+          </div>
+          <div class="stat">
+            <div id="final-total-par" class="stat-value">0</div>
+            <div class="stat-label">Total Par</div>
+          </div>
+          <div class="stat">
+            <div id="final-perfect" class="stat-value">0</div>
+            <div class="stat-label">Perfect Rounds</div>
+          </div>
+        </div>
+        <p id="final-rating" class="final-rating"></p>
+
+        <table class="results-table" id="results-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Challenge</th>
+              <th>Keys</th>
+              <th>Par</th>
+              <th>Diff</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="button-group">
+          <button class="btn btn-primary restart-btn">🔄 Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Learn bash shortcuts the fun way. <a href="https://github.com/StevenMaude/bash-keyboard-game">View on GitHub</a></p>
+    </footer>
+  </div>
+
+  <script src="js/challenges.js"></script>
+  <script src="js/bash-input.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

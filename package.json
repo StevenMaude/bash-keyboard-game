@@ -1,0 +1,22 @@
+{
+  "name": "bash-keyboard-game",
+  "version": "1.0.0",
+  "description": "An educational game to learn bash keyboard edit shortcuts",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch"
+  },
+  "keywords": [
+    "bash",
+    "keyboard",
+    "shortcuts",
+    "educational",
+    "game"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
