@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bash Keyboard Game</title>
+  <script type="module" crossorigin src="/assets/index-BU38JPl-.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-ClJzX3rH.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ───────────────────────── Landing screen ───────────────────────── -->
+    <div id="screen-landing" class="screen">
+      <div class="terminal-window">
+        <div class="terminal-titlebar">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="titlebar-text">bash-keyboard-game — bash</span>
+        </div>
+        <div class="terminal-body landing-body">
+          <div class="prompt-line">
+            <span class="prompt">user@host:~$</span>
+            <span class="typed-cmd"> bash-keyboard-game<span class="blink">▌</span></span>
+          </div>
+          <h1 class="game-title">Bash<br/>Keyboard<br/>Game</h1>
+          <p class="game-subtitle">
+            Master GNU Readline shortcuts by editing real commands.<br/>
+            Type less. Move faster. Look like a wizard. 🧙
+          </p>
+          <div class="landing-btns">
+            <button id="btn-start" class="btn-primary">▶ Start Game</button>
+            <button id="btn-how-to" class="btn-secondary">? How to Play</button>
+          </div>
+          <div class="shortcut-peek">
+            <span class="peek-item"><kbd>Ctrl+K</kbd> kill to end</span>
+            <span class="peek-item"><kbd>Alt+F</kbd> forward word</span>
+            <span class="peek-item"><kbd>Ctrl+Y</kbd> yank</span>
+            <span class="peek-item"><kbd>Ctrl+T</kbd> transpose</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── How-to-play screen ───────────────────── -->
+    <div id="screen-howto" class="screen">
+      <div class="terminal-window howto-window">
+        <div class="terminal-titlebar">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="titlebar-text">Readline Shortcuts Reference</span>
+        </div>
+        <div class="terminal-body howto-body">
+          <h2 class="howto-title">Bash Readline Shortcuts</h2>
+          <p class="howto-intro">
+            These are the default GNU Readline key bindings used by bash.
+            Learning them will dramatically speed up your command-line work.
+          </p>
+          <table class="shortcut-table">
+            <thead>
+              <tr><th>Shortcut</th><th>Action</th></tr>
+            </thead>
+            <tbody id="shortcut-tbody"></tbody>
+          </table>
+          <div class="howto-tip">
+            <strong>💡 Tip:</strong> On macOS, <kbd>Alt</kbd> is <kbd>Option (⌥)</kbd>.
+            In some terminals you may need to enable "Use Option as Meta key".
+          </div>
+          <button id="btn-back-from-howto" class="btn-secondary">← Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── Game screen ──────────────────────────── -->
+    <div id="screen-game" class="screen">
+      <div class="terminal-window game-window">
+        <div class="terminal-titlebar">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="titlebar-text">bash-keyboard-game</span>
+        </div>
+        <div class="terminal-body game-body">
+
+          <!-- header row -->
+          <div class="game-header">
+            <div class="challenge-counter">
+              Challenge <span id="challenge-num">1</span> / <span id="challenge-total">8</span>
+            </div>
+            <div class="keypress-display">
+              <span id="keypress-count" class="keypress-num">0</span>
+              <span class="keypress-label"> keypresses</span>
+              &nbsp;|&nbsp; target:
+              <span id="target-keys" class="target-keys">?</span>
+            </div>
+          </div>
+
+          <!-- challenge info -->
+          <div class="challenge-info">
+            <span class="challenge-badge">CHALLENGE</span>
+            <span id="challenge-title" class="challenge-title-text"></span>
+          </div>
+          <p id="challenge-description" class="challenge-description"></p>
+
+          <!-- target -->
+          <div class="field-block">
+            <div class="field-label">
+              <span class="label-icon">🎯</span> Target
+            </div>
+            <div id="target-display" class="command-display target-display"></div>
+          </div>
+
+          <!-- editable area -->
+          <div class="field-block">
+            <div class="field-label">
+              <span class="label-icon">✏️</span> Your edit
+            </div>
+            <div id="command-display" class="command-display edit-display" aria-hidden="true"></div>
+            <textarea
+              id="command-input"
+              class="command-input-hidden"
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              aria-label="Command editor"
+            ></textarea>
+          </div>
+
+          <!-- progress bar -->
+          <div class="progress-section">
+            <div class="progress-bar-wrap">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <span id="progress-pct" class="progress-pct">0</span>%
+          </div>
+
+          <!-- hint -->
+          <div class="hint-block">
+            <span class="hint-label">💡 Hint:</span>
+            <span id="challenge-hint" class="hint-text"></span>
+          </div>
+
+          <button id="btn-skip" class="btn-ghost btn-skip">Skip challenge →</button>
+        </div>
+      </div>
+
+      <!-- success overlay (on top of game window) -->
+      <div id="overlay-success" class="overlay hidden">
+        <div class="success-card">
+          <div class="success-check">✓</div>
+          <h3 class="success-heading">Challenge Complete!</h3>
+          <div class="success-stats">
+            <div class="stat">
+              <span class="stat-val" id="success-keypresses">0</span>
+              <span class="stat-lbl">keypresses</span>
+            </div>
+            <div class="stat stat-sep">/</div>
+            <div class="stat">
+              <span class="stat-val" id="success-optimal">0</span>
+              <span class="stat-lbl">optimal</span>
+            </div>
+          </div>
+          <div id="success-stars" class="success-stars"></div>
+          <div id="success-rating" class="success-rating"></div>
+          <button id="btn-next" class="btn-primary">Next Challenge →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────── End screen ───────────────────────────── -->
+    <div id="screen-end" class="screen">
+      <div class="terminal-window end-window">
+        <div class="terminal-titlebar">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="titlebar-text">Results</span>
+        </div>
+        <div class="terminal-body end-body">
+          <h2 class="end-title">Session Complete!</h2>
+          <div class="end-total">
+            Total keypresses: <strong id="final-score">0</strong>
+          </div>
+          <ul id="challenge-summary" class="challenge-summary"></ul>
+          <div class="end-btns">
+            <button id="btn-restart"  class="btn-primary">▶ Play Again</button>
+            <button id="btn-howto-end" class="btn-secondary">? Shortcuts</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #app -->
+
+</body>
+</html>
