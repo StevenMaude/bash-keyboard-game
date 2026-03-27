@@ -6,7 +6,7 @@ import { CHALLENGES, COLLECTIONS, selectChallenges } from '../js/challenges.js';
 
 describe('COLLECTIONS structure', () => {
   it('exports at least 10 collections', () => {
-    expect(COLLECTIONS.length).toBeGreaterThanOrEqual(12);
+    expect(COLLECTIONS.length).toBe(12);
   });
 
   it('every collection has required fields', () => {
@@ -43,7 +43,7 @@ describe('COLLECTIONS structure', () => {
 
 describe('CHALLENGES data', () => {
   it('exports at least 85 challenges', () => {
-    expect(CHALLENGES.length).toBeGreaterThanOrEqual(85);
+    expect(CHALLENGES.length).toBeGreaterThanOrEqual(90);
   });
 
   it('CHALLENGES equals the flat list of all collection challenges', () => {
