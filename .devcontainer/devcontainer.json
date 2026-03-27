@@ -1,0 +1,32 @@
+{
+  "name": "bash-keyboard-game-electron",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/bash-keyboard-game",
+  "forwardPorts": [5901, 6080],
+  "portsAttributes": {
+    "5901": {
+      "label": "VNC",
+      "onAutoForward": "notify"
+    },
+    "6080": {
+      "label": "noVNC",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "containerEnv": {
+    "DISPLAY": ":1"
+  },
+  "postCreateCommand": "npm install",
+  "postStartCommand": "bash .devcontainer/start-vnc.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

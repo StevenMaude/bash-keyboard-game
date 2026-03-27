@@ -1,0 +1,27 @@
+{
+  "name": "bash-keyboard-game",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "build": "npm run build:renderer && npm run build:electron",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev:renderer": "vite",
+    "dev:electron": "wait-on tcp:5173 && ELECTRON_RENDERER_URL=http://127.0.0.1:5173 electron .",
+    "build:renderer": "vite build",
+    "build:electron": "rm -rf electron-dist && mkdir -p electron-dist && cp -R dist electron electron-dist/ && cp package.json README.md electron-dist/",
+    "start": "electron .",
+    "start:dist": "npm run build && electron ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^38.3.0",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.2",
+    "wait-on": "^9.0.4"
+  },
+  "main": "electron/main.cjs"
+}
