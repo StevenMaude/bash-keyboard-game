@@ -11,11 +11,28 @@ Open `index.html` in a browser, or visit the
 
 ## How it works
 
-1. Each round shows a **starting command** and a **target command**.
-2. Edit the text using bash keyboard shortcuts to match the target.
-3. Try to meet or beat the **par** (ideal keypress count) for each round.
-4. After 10 rounds your total score and a per-round breakdown are shown.
-5. Press **Play Again** to try a new random set of challenges.
+1. Choose a **learning track** to study specific shortcuts, or play a
+   **random mix** of challenges.
+2. Each round shows a **starting command** and a **target command**.
+3. Edit the text using bash keyboard shortcuts to match the target.
+4. Try to meet or beat the **par** (ideal keypress count) for each round.
+5. After completing all rounds your total score and a per-round breakdown are
+   shown.
+6. Press **Play Again** to try again.
+
+## Learning tracks
+
+Each track focuses on a specific set of shortcuts and progresses through four
+stages: introduction, practice, advanced, and graduation.
+
+| Track             | Focus                                           |
+| ----------------- | ----------------------------------------------- |
+| 🧭 Navigation     | Ctrl+A/E/B/F, Alt+B/F – moving the cursor      |
+| ✂️ Killing & Deleting | Ctrl+K/U/W/D/H, Alt+D – removing text      |
+| 📋 Kill & Yank    | Ctrl+W/K/U + Ctrl+Y – cut and paste             |
+| 🔀 Transpose      | Ctrl+T – swapping characters to fix typos       |
+| 🔗 Combined Skills| Multi-shortcut editing                           |
+| 🎓 Graduation     | Complex challenges combining all techniques     |
 
 ## Supported shortcuts
 
@@ -37,6 +54,15 @@ Open `index.html` in a browser, or visit the
 | Ctrl+T   | Transpose two characters      |
 
 Arrow keys, Home, End, Backspace, and Delete also work as expected.
+
+### Browser compatibility note
+
+Some browsers intercept certain keyboard shortcuts (e.g. Ctrl+W closes a tab,
+Ctrl+T opens a new tab). The game uses capture-phase event listeners with
+`preventDefault` and `stopPropagation` to override these, and also handles
+macOS where Alt+key produces special characters by falling back to
+`event.code`. If a shortcut still conflicts with your browser, consider using a
+different browser or disabling the conflicting shortcut.
 
 ## Development
 
@@ -70,14 +96,14 @@ to forward port 5500 for local preview.
 ├── index.html              # Main game page (deploy this)
 ├── css/style.css           # Game styling
 ├── js/
-│   ├── challenges.js       # 40 challenge definitions
+│   ├── challenges.js       # 85 challenges + track metadata
 │   ├── bash-input.js       # Bash readline emulation
-│   ├── game.js             # Game engine (rounds, scoring)
+│   ├── game.js             # Game engine (tracks, rounds, scoring)
 │   └── app.js              # DOM wiring
 ├── tests/
 │   ├── bash-input.test.js  # BashInput unit tests
 │   ├── game.test.js        # Game engine tests
-│   └── challenges.test.js  # Challenge data validation
+│   └── challenges.test.js  # Challenge & track data validation
 ├── .devcontainer/          # VS Code dev container config
 ├── package.json
 └── jest.config.js
