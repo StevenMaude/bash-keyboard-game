@@ -1,13 +1,28 @@
 # Bash Keyboard Game
 
-An educational game to learn and practice bash (readline) keyboard edit
+An Electron desktop app to learn and practice bash (readline) keyboard edit
 shortcuts. Edit command-line text to match a target using as few keypresses as
 possible.
 
-## Play
+Built with Electron so that all bash keyboard shortcuts (Ctrl+W, Ctrl+T, etc.)
+work without being intercepted by the browser.
 
-Open `index.html` in a browser, or visit the
-[GitHub Pages deployment](https://stevenmaude.github.io/bash-keyboard-game/).
+## Install and run
+
+```bash
+npm install
+npm start
+```
+
+## Build
+
+Create a distributable build for your platform:
+
+```bash
+npm run build
+```
+
+The output is placed in the `dist/` directory.
 
 ## How it works
 
@@ -55,15 +70,6 @@ stages: introduction, practice, advanced, and graduation.
 
 Arrow keys, Home, End, Backspace, and Delete also work as expected.
 
-### Browser compatibility note
-
-Some browsers intercept certain keyboard shortcuts (e.g. Ctrl+W closes a tab,
-Ctrl+T opens a new tab). The game uses capture-phase event listeners with
-`preventDefault` and `stopPropagation` to override these, and also handles
-macOS where Alt+key produces special characters by falling back to
-`event.code`. If a shortcut still conflicts with your browser, consider using a
-different browser or disabling the conflicting shortcut.
-
 ## Development
 
 ### Prerequisites
@@ -77,6 +83,12 @@ different browser or disabling the conflicting shortcut.
 npm install
 ```
 
+### Running the app in development
+
+```bash
+npm start
+```
+
 ### Running tests
 
 ```bash
@@ -87,13 +99,13 @@ npm test
 
 A `.devcontainer/devcontainer.json` is included for VS Code / GitHub
 Codespaces. It uses the Node 22 image, installs dependencies automatically,
-and includes useful VS Code extensions. The Live Server extension is configured
-to forward port 5500 for local preview.
+and includes useful VS Code extensions.
 
 ## Project structure
 
 ```
-├── index.html              # Main game page (deploy this)
+├── main.js                 # Electron main process
+├── index.html              # Renderer (game UI)
 ├── css/style.css           # Game styling
 ├── js/
 │   ├── challenges.js       # 85 challenges + track metadata
@@ -103,9 +115,10 @@ to forward port 5500 for local preview.
 ├── tests/
 │   ├── bash-input.test.js  # BashInput unit tests
 │   ├── game.test.js        # Game engine tests
-│   └── challenges.test.js  # Challenge & track data validation
+│   ├── challenges.test.js  # Challenge & track data validation
+│   └── electron.test.js    # Electron configuration tests
 ├── .devcontainer/          # VS Code dev container config
-├── package.json
+├── package.json            # Electron + electron-builder config
 └── jest.config.js
 ```
 
