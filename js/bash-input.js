@@ -38,9 +38,14 @@ class BashInput {
 
   /**
    * Process a keyboard event. Returns true if the event was handled.
+   *
+   * Uses event.code (physical key) for Alt shortcuts to work on macOS
+   * where Alt+key produces special characters in event.key.
    */
   handleKey(event) {
     const { ctrlKey, altKey, metaKey, key } = event;
+    // code gives physical key (e.g. 'KeyB') regardless of modifiers
+    const code = event.code || '';
 
     // Count every keypress
     this.keypressCount++;
@@ -63,7 +68,13 @@ class BashInput {
     }
 
     if (altKey && !ctrlKey && !metaKey) {
-      switch (key.toLowerCase()) {
+      // Use code (physical key) because on macOS Alt+key produces
+      // special characters (e.g. Alt+B → ∫) in event.key
+      const physicalKey = code.replace('Key', '').toLowerCase();
+      const lookupKey = ['b', 'f', 'd'].includes(key.toLowerCase())
+        ? key.toLowerCase()
+        : physicalKey;
+      switch (lookupKey) {
         case 'b': this._moveBackWord(); return true;
         case 'f': this._moveForwardWord(); return true;
         case 'd': this._killWordForward(); return true;

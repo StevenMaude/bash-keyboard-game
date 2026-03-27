@@ -1,13 +1,17 @@
 const { BashInput } = require('../js/bash-input');
 const { Game } = require('../js/game');
-const { CHALLENGES } = require('../js/challenges');
+const { CHALLENGES, getChallengesForTrack } = require('../js/challenges');
+
+// Make getChallengesForTrack available globally for Game.startTrack()
+global.getChallengesForTrack = getChallengesForTrack;
 
 function makeKey(key, opts = {}) {
   return {
     ctrlKey: opts.ctrl || false,
     altKey: opts.alt || false,
     metaKey: opts.meta || false,
-    key: key
+    key: key,
+    code: opts.code || ''
   };
 }
 
@@ -27,13 +31,19 @@ describe('Game', () => {
     });
   });
 
-  describe('start', () => {
+  describe('start (random mode)', () => {
     test('initializes game with correct number of rounds', () => {
       game.start();
       const state = game.getState();
       expect(state.state).toBe('playing');
       expect(state.totalRounds).toBe(3);
       expect(state.currentRound).toBe(0);
+    });
+
+    test('sets mode to random', () => {
+      game.start();
+      expect(game.getState().mode).toBe('random');
+      expect(game.getState().trackName).toBeNull();
     });
 
     test('loads first challenge', () => {
@@ -49,6 +59,40 @@ describe('Game', () => {
     });
   });
 
+  describe('startTrack (track mode)', () => {
+    test('starts a game with challenges from the specified track', () => {
+      game.startTrack('navigation');
+      const state = game.getState();
+      expect(state.state).toBe('playing');
+      expect(state.mode).toBe('track');
+      expect(state.trackName).toBe('navigation');
+    });
+
+    test('loads challenges in stage order', () => {
+      game.startTrack('navigation');
+      const challenges = game.roundChallenges;
+      for (let i = 1; i < challenges.length; i++) {
+        const prev = challenges[i - 1];
+        const curr = challenges[i];
+        expect(prev.stage <= curr.stage ||
+          (prev.stage === curr.stage && prev.id <= curr.id)).toBe(true);
+      }
+    });
+
+    test('all challenges belong to the track', () => {
+      game.startTrack('killing');
+      game.roundChallenges.forEach(c => {
+        expect(c.track).toBe('killing');
+      });
+    });
+
+    test('total rounds equals number of track challenges', () => {
+      game.startTrack('transpose');
+      const expected = getChallengesForTrack('transpose').length;
+      expect(game.getState().totalRounds).toBe(expected);
+    });
+  });
+
   describe('handleKey', () => {
     test('does nothing when not playing', () => {
       const result = game.handleKey(makeKey('a'));
@@ -57,7 +101,6 @@ describe('Game', () => {
 
     test('processes key during playing state', () => {
       game.start();
-      const initialText = game.getState().text;
       game.handleKey(makeKey('a', { ctrl: true })); // Ctrl+A
       expect(game.getState().cursorPos).toBe(0);
     });
@@ -74,14 +117,10 @@ describe('Game', () => {
       game.start();
       const challenge = game.getState().challenge;
 
-      // Directly set the text to target
-      bashInput.reset(challenge.targetText);
-      // Trigger a state check by pressing a neutral key (Ctrl+A at position 0)
+      // Type to make it match - use Ctrl+U to clear and type target
       bashInput.text = challenge.startText;
       bashInput.cursorPos = challenge.startText.length;
       bashInput.keypressCount = 0;
-
-      // Type to make it match - use Ctrl+U to clear and type target
       game.handleKey(makeKey('u', { ctrl: true })); // clear line
 
       // Type the target text
@@ -110,7 +149,6 @@ describe('Game', () => {
 
       // Might already be complete if text matches, otherwise we need to set it
       if (game.getState().state !== 'roundComplete') {
-        // Directly manipulate for testing
         bashInput.text = challenge.targetText;
         bashInput.keypressCount = 5;
         game.state = 'roundComplete';
@@ -124,13 +162,25 @@ describe('Game', () => {
   });
 
   describe('restart', () => {
-    test('resets game to initial state', () => {
+    test('resets random game to initial state', () => {
       game.start();
       game.restart();
       const state = game.getState();
       expect(state.currentRound).toBe(0);
       expect(state.results).toEqual([]);
       expect(state.state).toBe('playing');
+      expect(state.mode).toBe('random');
+    });
+
+    test('restarts track game in same track', () => {
+      game.startTrack('navigation');
+      game.restart();
+      const state = game.getState();
+      expect(state.currentRound).toBe(0);
+      expect(state.results).toEqual([]);
+      expect(state.state).toBe('playing');
+      expect(state.mode).toBe('track');
+      expect(state.trackName).toBe('navigation');
     });
   });
 

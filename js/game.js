@@ -2,6 +2,9 @@
  * Game engine for the Bash Keyboard Game.
  *
  * Manages game state, challenge selection, scoring, and UI updates.
+ * Supports two modes:
+ *   - "random": picks N random challenges from all available
+ *   - "track":  plays challenges from a specific learning track in stage order
  */
 class Game {
   constructor(options = {}) {
@@ -15,12 +18,16 @@ class Game {
     this.roundChallenges = [];
     this.results = [];
     this.state = 'idle'; // idle, playing, roundComplete, gameComplete
+    this.mode = 'random'; // 'random' or 'track'
+    this.trackName = null;
   }
 
   /**
-   * Start a new game: pick random challenges and begin the first round.
+   * Start a new game in random mode: pick random challenges and begin.
    */
   start() {
+    this.mode = 'random';
+    this.trackName = null;
     this.roundChallenges = this._selectRandomChallenges(this.numRounds);
     this.currentRound = 0;
     this.results = [];
@@ -29,10 +36,33 @@ class Game {
   }
 
   /**
-   * Restart the game from the beginning.
+   * Start a new game in track mode: play challenges from a specific track
+   * in stage order.
+   */
+  startTrack(trackId) {
+    this.mode = 'track';
+    this.trackName = trackId;
+    var trackChallenges = typeof getChallengesForTrack === 'function'
+      ? getChallengesForTrack(trackId)
+      : this.challenges
+          .filter(function (c) { return c.track === trackId; })
+          .sort(function (a, b) { return a.stage - b.stage || a.id - b.id; });
+    this.roundChallenges = trackChallenges;
+    this.currentRound = 0;
+    this.results = [];
+    this.state = 'playing';
+    this._loadRound();
+  }
+
+  /**
+   * Restart the game from the beginning (same mode as last game).
    */
   restart() {
-    this.start();
+    if (this.mode === 'track' && this.trackName) {
+      this.startTrack(this.trackName);
+    } else {
+      this.start();
+    }
   }
 
   /**
@@ -70,6 +100,8 @@ class Game {
   getState() {
     return {
       state: this.state,
+      mode: this.mode,
+      trackName: this.trackName,
       currentRound: this.currentRound,
       totalRounds: this.roundChallenges.length,
       challenge: this.currentChallenge,

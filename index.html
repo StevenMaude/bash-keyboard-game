@@ -22,13 +22,20 @@
       <div class="start-content">
         <h2>🎮 Learn Bash Shortcuts</h2>
         <p>Practice the keyboard shortcuts that make editing on the command line fast and efficient.</p>
+        <p class="browser-note">⚠️ Some browsers may intercept Ctrl+W or Ctrl+T. If a shortcut closes your tab or opens a new one, try using a different browser or disabling that browser shortcut.</p>
         <ul>
           <li>Edit the text to match the target using bash shortcuts</li>
           <li>Try to match or beat the <strong>par</strong> (ideal keypresses)</li>
-          <li>10 random challenges per game</li>
+          <li>Choose a <strong>learning track</strong> or play a random mix</li>
           <li>Improve your score with each attempt!</li>
         </ul>
-        <button id="start-btn" class="btn btn-primary">▶ Start Game</button>
+
+        <h3 class="section-heading">🎲 Quick Play</h3>
+        <button id="start-random-btn" class="btn btn-primary">▶ Random Mix (10 rounds)</button>
+
+        <h3 class="section-heading">📚 Learning Tracks</h3>
+        <p class="track-intro">Each track teaches specific shortcuts with progressively harder challenges, ending with graduation exercises.</p>
+        <div id="track-grid" class="track-grid"></div>
 
         <div style="margin-top: 1.5rem;">
           <button id="shortcut-toggle" class="shortcut-toggle">📖 Show Shortcut Reference</button>
@@ -58,6 +65,7 @@
     <div id="game-screen" class="card hidden">
       <div class="round-info">
         <span id="round-counter" class="round-counter">Round 1 / 10</span>
+        <span id="track-label" class="track-label hidden"></span>
         <span class="keypress-info">
           Keypresses: <span id="keypress-counter" class="count">0</span>
           <span class="par">/ par: <span id="par-display">0</span></span>

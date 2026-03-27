@@ -5,7 +5,8 @@ function makeKey(key, opts = {}) {
     ctrlKey: opts.ctrl || false,
     altKey: opts.alt || false,
     metaKey: opts.meta || false,
-    key: key
+    key: key,
+    code: opts.code || ''
   };
 }
 
@@ -359,6 +360,36 @@ describe('BashInput', () => {
       input.reset('hello', 2);
       input.handleKey(makeKey('Delete'));
       expect(input.text).toBe('helo');
+    });
+  });
+
+  describe('Alt+key with macOS special characters (code fallback)', () => {
+    test('Alt+B via code when key is special char (∫)', () => {
+      input.reset('hello world', 11);
+      // macOS: Alt+B sends key='∫', code='KeyB'
+      input.handleKey(makeKey('∫', { alt: true, code: 'KeyB' }));
+      expect(input.cursorPos).toBe(6);
+    });
+
+    test('Alt+F via code when key is special char (ƒ)', () => {
+      input.reset('hello world', 0);
+      // macOS: Alt+F sends key='ƒ', code='KeyF'
+      input.handleKey(makeKey('ƒ', { alt: true, code: 'KeyF' }));
+      expect(input.cursorPos).toBe(6);
+    });
+
+    test('Alt+D via code when key is special char (∂)', () => {
+      input.reset('hello world', 6);
+      // macOS: Alt+D sends key='∂', code='KeyD'
+      input.handleKey(makeKey('∂', { alt: true, code: 'KeyD' }));
+      expect(input.text).toBe('hello ');
+      expect(input.cursorPos).toBe(6);
+    });
+
+    test('Alt+B still works with normal key', () => {
+      input.reset('hello world', 11);
+      input.handleKey(makeKey('b', { alt: true, code: 'KeyB' }));
+      expect(input.cursorPos).toBe(6);
     });
   });
 });
