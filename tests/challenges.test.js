@@ -6,7 +6,7 @@ import { CHALLENGES, COLLECTIONS, selectChallenges } from '../js/challenges.js';
 
 describe('COLLECTIONS structure', () => {
   it('exports at least 10 collections', () => {
-    expect(COLLECTIONS.length).toBeGreaterThanOrEqual(10);
+    expect(COLLECTIONS.length).toBeGreaterThanOrEqual(12);
   });
 
   it('every collection has required fields', () => {
@@ -42,8 +42,8 @@ describe('COLLECTIONS structure', () => {
 });
 
 describe('CHALLENGES data', () => {
-  it('exports at least 44 challenges', () => {
-    expect(CHALLENGES.length).toBeGreaterThanOrEqual(44);
+  it('exports at least 85 challenges', () => {
+    expect(CHALLENGES.length).toBeGreaterThanOrEqual(85);
   });
 
   it('CHALLENGES equals the flat list of all collection challenges', () => {
@@ -82,12 +82,16 @@ describe('CHALLENGES data', () => {
     }
   });
 
-  it('no challenge hint recommends bare Ctrl+W (browser closes the tab)', () => {
-    for (const ch of CHALLENGES) {
-      // Hints must not instruct players to press Ctrl+W without caveat —
-      // the preferred browser-safe binding is Alt+Backspace.
-      expect(ch.hint).not.toMatch(/^Ctrl\+W/);
-    }
+  it('kill-word-back challenges mention Alt+Backspace browser fallback', () => {
+    // In Electron, Ctrl+W works fully and hints may use it directly.
+    // Challenges in the kill-word-back collection should still mention
+    // Alt+Backspace for players using the browser build.
+    const kwbCollection = COLLECTIONS.find(c => c.id === 'kill-word-back');
+    expect(kwbCollection).toBeDefined();
+    const withFallback = kwbCollection.challenges.filter(
+      ch => ch.hint.includes('Alt+Backspace') || ch.hint.includes('browser')
+    );
+    expect(withFallback.length).toBeGreaterThan(0);
   });
 });
 

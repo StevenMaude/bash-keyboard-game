@@ -3,17 +3,15 @@
  * Loaded as an ES module from index.html.
  *
  * Two game modes:
- *   practice — 8 random challenges from all collections (original behaviour)
+ *   practice — 8 random challenges from all collections
  *   learn    — structured walk through every collection in order, with a
  *              per-collection completion overlay between collections
  *
- * Browser keybinding notes:
- *   Ctrl+W closes the browser tab and CANNOT be intercepted by JavaScript.
- *   Players should use Alt+Backspace (identical readline behaviour) instead.
- *   Ctrl+T may open a new tab; the game labels affected challenges clearly.
- *   The keydown listener is attached to `window` in the capture phase so it
- *   fires as early as possible, which prevents Ctrl+F (browser find) and
- *   other page-level shortcuts from interfering.
+ * Electron vs. browser:
+ *   When running inside Electron ALL GNU Readline shortcuts work natively —
+ *   Ctrl+W, Ctrl+T, Ctrl+D, etc. are not intercepted by the app framework.
+ *   When running in a browser, Ctrl+W closes the tab (cannot be prevented);
+ *   players should use Alt+Backspace instead.
  */
 
 import { BashLineEditor } from './shortcuts.js';
@@ -22,6 +20,12 @@ import { calcProgress, getRating, renderStars } from './utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PRACTICE_CHALLENGES = 8;
+
+// ── Runtime detection ─────────────────────────────────────────────────────────
+// window.electronAPI is injected by the preload script when running in Electron.
+const IS_ELECTRON = typeof window !== 'undefined' &&
+                    typeof window.electronAPI !== 'undefined' &&
+                    window.electronAPI.isElectron === true;
 
 // ── DOM helpers ──────────────────────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
@@ -177,16 +181,13 @@ function handleKeyDown(event) {
 
   const { key, ctrlKey, altKey, metaKey, shiftKey } = event;
 
-  // Allow browser devtools
+  // Allow DevTools regardless of platform
   if (key === 'F12') return;
 
-  // Ctrl+W closes the browser tab and cannot be intercepted.
-  // Remind the player to use Alt+Backspace instead (same readline action).
-  if (ctrlKey && key.toLowerCase() === 'w') {
-    // We cannot preventDefault() this — the tab will close.
-    // Let the browser handle it; the game has already explained the alternative.
-    return;
-  }
+  // In a browser (non-Electron), Ctrl+W closes the tab at the OS/browser-process
+  // level and CANNOT be stopped.  Let the browser handle it; the game has
+  // already told players to use Alt+Backspace instead.
+  if (!IS_ELECTRON && ctrlKey && key.toLowerCase() === 'w') return;
 
   const handled = editor.handleKey(key, ctrlKey, altKey, metaKey, shiftKey);
 
@@ -303,7 +304,26 @@ function showEndScreen() {
 }
 
 // ── How-to-play shortcut table ────────────────────────────────────────────────
-const SHORTCUT_TABLE = [
+// In Electron, Ctrl+W works natively. In the browser it closes the tab, so
+// players must use Alt+Backspace.
+const SHORTCUT_TABLE_ELECTRON = [
+  ['Ctrl+A',        'Move to beginning of line'],
+  ['Ctrl+E',        'Move to end of line'],
+  ['Ctrl+F / →',    'Move forward one character'],
+  ['Ctrl+B / ←',    'Move backward one character'],
+  ['Alt+F',         'Move forward one word'],
+  ['Alt+B',         'Move backward one word'],
+  ['Backspace',     'Delete character before cursor'],
+  ['Ctrl+D',        'Delete character at cursor'],
+  ['Ctrl+K',        'Kill (cut) to end of line'],
+  ['Ctrl+U',        'Kill from start to cursor'],
+  ['Ctrl+W',        'Kill word backward (whitespace boundary)'],
+  ['Alt+D',         'Kill word forward (alphanumeric boundary)'],
+  ['Ctrl+Y',        'Yank (paste) last killed text'],
+  ['Ctrl+T',        'Transpose characters around cursor'],
+];
+
+const SHORTCUT_TABLE_BROWSER = [
   ['Ctrl+A',           'Move to beginning of line'],
   ['Ctrl+E',           'Move to end of line'],
   ['Ctrl+F / →',       'Move forward one character'],
@@ -314,20 +334,25 @@ const SHORTCUT_TABLE = [
   ['Ctrl+D',           'Delete character at cursor'],
   ['Ctrl+K',           'Kill (cut) to end of line'],
   ['Ctrl+U',           'Kill from start to cursor'],
-  ['Alt+Backspace',    'Kill word backward (whitespace boundary)'],
+  ['Alt+Backspace',    'Kill word backward (Ctrl+W closes browser tabs!)'],
   ['Alt+D',            'Kill word forward (alphanumeric boundary)'],
   ['Ctrl+Y',           'Yank (paste) last killed text'],
-  ['Ctrl+T',           'Transpose characters around cursor'],
+  ['Ctrl+T',           'Transpose (may open a new browser tab)'],
 ];
 
 function buildShortcutTable() {
   const tbody = $('shortcut-tbody');
   if (!tbody) return;
-  tbody.innerHTML = SHORTCUT_TABLE.map(([k, d]) => `
+  const table = IS_ELECTRON ? SHORTCUT_TABLE_ELECTRON : SHORTCUT_TABLE_BROWSER;
+  tbody.innerHTML = table.map(([k, d]) => `
     <tr>
       <td><kbd>${k}</kbd></td>
       <td>${d}</td>
     </tr>`).join('');
+
+  // Show/hide the browser-compat warning
+  const compatBox = $('browser-compat-box');
+  if (compatBox) compatBox.style.display = IS_ELECTRON ? 'none' : '';
 }
 
 // ── Textarea input guard ──────────────────────────────────────────────────────
@@ -359,14 +384,13 @@ function init() {
   $('btn-restart').addEventListener('click', () => showScreen('screen-landing'));
   $('btn-howto-end').addEventListener('click', () => showScreen('screen-howto'));
 
-  // Textarea input guard (prevents browser autocomplete/paste interference)
+  // Textarea input guard (prevents paste / autocomplete interference)
   $('command-input').addEventListener('input', handleInput);
 
   // ── Global keydown handler (capture phase) ──────────────────────────────
-  // Attaching to `window` in the capture phase lets us call preventDefault()
-  // before browser default actions (e.g. Ctrl+F search, Ctrl+D bookmark).
-  // Ctrl+W (close tab) and Ctrl+T (new tab) are handled at the browser
-  // process level and CANNOT be prevented regardless of phase.
+  // Using the capture phase ensures our preventDefault() beats most
+  // browser-level shortcuts.  In Electron this gives us full control
+  // over every key combination.
   window.addEventListener('keydown', handleKeyDown, { capture: true });
 
   showScreen('screen-landing');

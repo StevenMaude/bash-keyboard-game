@@ -1,12 +1,18 @@
 {
   "name": "bash-keyboard-game",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
+    },
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode",
+      "webPort": 6080,
+      "vncPort": 5901
     }
   },
-  "postCreateCommand": "npm install",
+  "runArgs": ["--shm-size=512m"],
+  "postCreateCommand": "npm install && npm run build:electron",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -21,11 +27,18 @@
       }
     }
   },
-  "forwardPorts": [5173],
+  "forwardPorts": [5173, 6080, 5901],
   "portsAttributes": {
     "5173": {
       "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "6080": {
+      "label": "noVNC Desktop",
       "onAutoForward": "openBrowser"
+    },
+    "5901": {
+      "label": "VNC"
     }
   }
 }
