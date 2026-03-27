@@ -1,7 +1,7 @@
 import { pickChallenges } from './challenges.js'
 
-export function createGame(random = Math.random) {
-  const rounds = pickChallenges(5, random).map((challenge) => ({
+export function createGame(random = Math.random, roundCount = 12) {
+  const rounds = pickChallenges(roundCount, random).map((challenge) => ({
     ...challenge,
     baseline: challenge.start.length
   }))
@@ -49,6 +49,9 @@ export function evaluateRound(state, value) {
 }
 
 export function getProgress(state) {
+  if (state.rounds.length === 0) {
+    return 0
+  }
   return Math.round((state.currentRound / state.rounds.length) * 100)
 }
 

@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { createGame, incrementKeypress, evaluateRound, getProgress, totalBaseline } from '../game.js'
 
 describe('game logic', () => {
-  it('creates five rounds and baseline budget', () => {
+  it('creates twelve rounds and baseline budget', () => {
     const game = createGame(() => 0)
-    expect(game.rounds).toHaveLength(5)
+    expect(game.rounds).toHaveLength(12)
     expect(totalBaseline(game)).toBeGreaterThan(0)
   })
 
