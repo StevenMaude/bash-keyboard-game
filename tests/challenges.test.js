@@ -2,11 +2,53 @@
  * challenges.test.js — unit tests for challenge data and selectChallenges.
  */
 import { describe, it, expect } from 'vitest';
-import { CHALLENGES, selectChallenges } from '../js/challenges.js';
+import { CHALLENGES, COLLECTIONS, selectChallenges } from '../js/challenges.js';
+
+describe('COLLECTIONS structure', () => {
+  it('exports at least 10 collections', () => {
+    expect(COLLECTIONS.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('every collection has required fields', () => {
+    for (const col of COLLECTIONS) {
+      expect(col).toHaveProperty('id');
+      expect(col).toHaveProperty('name');
+      expect(col).toHaveProperty('shortcut');
+      expect(col).toHaveProperty('description');
+      expect(col).toHaveProperty('challenges');
+      expect(Array.isArray(col.challenges)).toBe(true);
+      expect(col.challenges.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('last collection is the graduate collection', () => {
+    const last = COLLECTIONS[COLLECTIONS.length - 1];
+    expect(last.id).toBe('graduate');
+  });
+
+  it('each collection has at least 4 challenges', () => {
+    for (const col of COLLECTIONS) {
+      expect(col.challenges.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('every challenge carries the collectionId of its parent', () => {
+    for (const col of COLLECTIONS) {
+      for (const ch of col.challenges) {
+        expect(ch.collectionId).toBe(col.id);
+      }
+    }
+  });
+});
 
 describe('CHALLENGES data', () => {
-  it('exports at least 20 challenges', () => {
-    expect(CHALLENGES.length).toBeGreaterThanOrEqual(20);
+  it('exports at least 44 challenges', () => {
+    expect(CHALLENGES.length).toBeGreaterThanOrEqual(44);
+  });
+
+  it('CHALLENGES equals the flat list of all collection challenges', () => {
+    const flat = COLLECTIONS.flatMap(c => c.challenges);
+    expect(CHALLENGES).toEqual(flat);
   });
 
   it('every challenge has required fields', () => {
@@ -37,6 +79,14 @@ describe('CHALLENGES data', () => {
     for (const ch of CHALLENGES) {
       expect(Number.isInteger(ch.optimalKeys)).toBe(true);
       expect(ch.optimalKeys).toBeGreaterThan(0);
+    }
+  });
+
+  it('no challenge hint recommends bare Ctrl+W (browser closes the tab)', () => {
+    for (const ch of CHALLENGES) {
+      // Hints must not instruct players to press Ctrl+W without caveat —
+      // the preferred browser-safe binding is Alt+Backspace.
+      expect(ch.hint).not.toMatch(/^Ctrl\+W/);
     }
   });
 });

@@ -1,25 +1,41 @@
 /**
  * game.js — orchestrates the UI and connects it to BashLineEditor.
  * Loaded as an ES module from index.html.
+ *
+ * Two game modes:
+ *   practice — 8 random challenges from all collections (original behaviour)
+ *   learn    — structured walk through every collection in order, with a
+ *              per-collection completion overlay between collections
+ *
+ * Browser keybinding notes:
+ *   Ctrl+W closes the browser tab and CANNOT be intercepted by JavaScript.
+ *   Players should use Alt+Backspace (identical readline behaviour) instead.
+ *   Ctrl+T may open a new tab; the game labels affected challenges clearly.
+ *   The keydown listener is attached to `window` in the capture phase so it
+ *   fires as early as possible, which prevents Ctrl+F (browser find) and
+ *   other page-level shortcuts from interfering.
  */
 
 import { BashLineEditor } from './shortcuts.js';
-import { selectChallenges } from './challenges.js';
+import { COLLECTIONS, selectChallenges } from './challenges.js';
 import { calcProgress, getRating, renderStars } from './utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const CHALLENGES_PER_GAME = 8;
+const PRACTICE_CHALLENGES = 8;
 
 // ── DOM helpers ──────────────────────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
 
 // ── Game State ────────────────────────────────────────────────────────────────
-let challenges = [];
-let currentIndex = 0;
-let keypresses = 0;
+let gameMode        = 'practice'; // 'practice' | 'learn'
+let challenges      = [];
+let currentIndex    = 0;
+let keypresses      = 0;
 let totalKeypresses = 0;
-let editor = null;
+let editor          = null;
 let challengeKeypresses = [];
+// learn-mode extras
+let currentCollectionIdx = 0;
 
 // ── Screen management ─────────────────────────────────────────────────────────
 function showScreen(id) {
@@ -28,14 +44,52 @@ function showScreen(id) {
   if (el) el.classList.add('active');
 }
 
-// ── Game start ────────────────────────────────────────────────────────────────
-function startGame() {
-  challenges = selectChallenges(CHALLENGES_PER_GAME);
+// ── Practice mode start ───────────────────────────────────────────────────────
+function startPractice() {
+  gameMode = 'practice';
+  challenges = selectChallenges(PRACTICE_CHALLENGES);
   currentIndex = 0;
   totalKeypresses = 0;
   challengeKeypresses = [];
   showScreen('screen-game');
-  loadChallenge(currentIndex);
+  updateCollectionBadge(null);
+  loadChallenge(0);
+}
+
+// ── Learn mode start ──────────────────────────────────────────────────────────
+function startLearn() {
+  gameMode = 'learn';
+  currentCollectionIdx = 0;
+  beginCollection(0);
+}
+
+function beginCollection(idx) {
+  currentCollectionIdx = idx;
+  challenges = COLLECTIONS[idx].challenges;
+  currentIndex = 0;
+  totalKeypresses = 0;
+  challengeKeypresses = [];
+  showScreen('screen-game');
+  updateCollectionBadge(COLLECTIONS[idx]);
+  loadChallenge(0);
+}
+
+function updateCollectionBadge(collection) {
+  const badge = $('collection-badge');
+  const track = $('collection-track');
+  if (!badge) return;
+  if (!collection) {
+    badge.textContent = '';
+    badge.classList.add('hidden');
+    if (track) track.textContent = '';
+    return;
+  }
+  badge.textContent = collection.name;
+  badge.classList.remove('hidden');
+  if (track) {
+    track.textContent =
+      `Collection ${currentCollectionIdx + 1} / ${COLLECTIONS.length}`;
+  }
 }
 
 // ── Challenge loader ──────────────────────────────────────────────────────────
@@ -43,10 +97,8 @@ function loadChallenge(index) {
   const challenge = challenges[index];
   keypresses = 0;
 
-  // Initialise editor with the starting text, cursor at end
   editor = new BashLineEditor(challenge.initial);
 
-  // Update UI
   $('challenge-num').textContent   = index + 1;
   $('challenge-total').textContent = challenges.length;
   $('challenge-title').textContent = challenge.title;
@@ -56,10 +108,8 @@ function loadChallenge(index) {
   $('target-keys').textContent     = challenge.optimalKeys;
   $('keypress-count').textContent  = '0';
 
-  // Show the initial text diff decorations
   renderInputDiff(challenge.initial, challenge.target);
 
-  // Sync the hidden textarea
   const ta = $('command-input');
   ta.value = challenge.initial;
   ta.setSelectionRange(editor.cursor, editor.cursor);
@@ -67,64 +117,38 @@ function loadChallenge(index) {
 
   updateProgressBar(challenge.initial, challenge.target, challenge.initial);
   $('overlay-success').classList.add('hidden');
+  $('overlay-collection').classList.add('hidden');
 }
 
 // ── Diff rendering in the editable area ──────────────────────────────────────
-/**
- * Render the current editor text into the visible command display,
- * colour-coding characters that match / differ from the target.
- */
 function renderInputDiff(currentText, target) {
   const display = $('command-display');
   if (!display) return;
 
-  // Simple char-by-char colouring
-  let html = '';
-  const maxLen = Math.max(currentText.length, target.length);
-  for (let i = 0; i < maxLen; i++) {
-    const c = currentText[i];
-    const t = target[i];
-    if (c === undefined) {
-      // Missing characters (need to add)
-      html += `<span class="char-missing">·</span>`;
-    } else if (t === undefined) {
-      // Extra characters (need to remove)
-      html += `<span class="char-extra">${escHtml(c)}</span>`;
-    } else if (c === t) {
-      html += `<span class="char-ok">${escHtml(c)}</span>`;
-    } else {
-      html += `<span class="char-wrong">${escHtml(c)}</span>`;
-    }
-  }
-
-  // Add cursor indicator
   const cursorPos = editor ? editor.cursor : 0;
-  // Insert cursor marker into the plain text and re-render
   const before = currentText.slice(0, cursorPos);
   const after  = currentText.slice(cursorPos);
 
-  // Rebuild with cursor
-  let htmlWithCursor = '';
+  let html = '';
   let charIdx = 0;
+
   for (const seg of [before, after]) {
     for (let i = 0; i < seg.length; i++) {
       const c = seg[i];
       const t = target[charIdx];
-      let cls = c === t ? 'char-ok' : 'char-extra';
-      if (charIdx >= target.length) cls = 'char-extra';
-      htmlWithCursor += `<span class="${cls}">${escHtml(c)}</span>`;
+      let cls = (charIdx < target.length && c === t) ? 'char-ok' : 'char-extra';
+      html += `<span class="${cls}">${escHtml(c)}</span>`;
       charIdx++;
     }
     if (seg === before) {
-      htmlWithCursor += '<span class="cursor-caret">|</span>';
+      html += '<span class="cursor-caret">|</span>';
     }
   }
-  // Fill in missing chars after current text
   for (let i = currentText.length; i < target.length; i++) {
-    htmlWithCursor += `<span class="char-missing">·</span>`;
+    html += `<span class="char-missing">·</span>`;
   }
 
-  display.innerHTML = htmlWithCursor;
+  display.innerHTML = html;
 }
 
 function escHtml(str) {
@@ -148,10 +172,21 @@ function updateProgressBar(current, target, initial) {
 function handleKeyDown(event) {
   if (!editor) return;
 
+  // Only intercept when the game screen is active
+  if (!$('screen-game').classList.contains('active')) return;
+
   const { key, ctrlKey, altKey, metaKey, shiftKey } = event;
 
-  // Allow browser devtools shortcuts to pass through
+  // Allow browser devtools
   if (key === 'F12') return;
+
+  // Ctrl+W closes the browser tab and cannot be intercepted.
+  // Remind the player to use Alt+Backspace instead (same readline action).
+  if (ctrlKey && key.toLowerCase() === 'w') {
+    // We cannot preventDefault() this — the tab will close.
+    // Let the browser handle it; the game has already explained the alternative.
+    return;
+  }
 
   const handled = editor.handleKey(key, ctrlKey, altKey, metaKey, shiftKey);
 
@@ -160,7 +195,6 @@ function handleKeyDown(event) {
     keypresses++;
     $('keypress-count').textContent = keypresses;
 
-    // Sync textarea
     const ta = $('command-input');
     ta.value = editor.text;
     ta.setSelectionRange(editor.cursor, editor.cursor);
@@ -169,7 +203,6 @@ function handleKeyDown(event) {
     renderInputDiff(editor.text, challenge.target);
     updateProgressBar(editor.text, challenge.target, challenge.initial);
 
-    // Check completion
     if (editor.text === challenge.target) {
       finishChallenge();
     }
@@ -192,26 +225,72 @@ function finishChallenge() {
   $('overlay-success').classList.remove('hidden');
 }
 
-// ── Next challenge / end ──────────────────────────────────────────────────────
+// ── Next challenge / collection / end ─────────────────────────────────────────
 function nextChallenge() {
+  $('overlay-success').classList.add('hidden');
   currentIndex++;
+
   if (currentIndex >= challenges.length) {
-    showEndScreen();
+    if (gameMode === 'learn') {
+      showCollectionComplete();
+    } else {
+      showEndScreen();
+    }
   } else {
     loadChallenge(currentIndex);
   }
 }
 
+// ── Collection complete (learn mode) ─────────────────────────────────────────
+function showCollectionComplete() {
+  const finishedCollection = COLLECTIONS[currentCollectionIdx];
+  const nextIdx = currentCollectionIdx + 1;
+  const isLastCollection = nextIdx >= COLLECTIONS.length;
+
+  $('coll-complete-name').textContent = finishedCollection.name;
+  $('coll-complete-score').textContent = totalKeypresses;
+
+  if (isLastCollection) {
+    $('coll-next-label').textContent = "You've completed all collections!";
+    $('btn-next-collection').textContent = '🎓 See Final Results';
+  } else {
+    const nextCollection = COLLECTIONS[nextIdx];
+    $('coll-next-label').textContent = `Up next: ${nextCollection.name} — ${nextCollection.shortcut}`;
+    $('btn-next-collection').textContent = 'Next Collection →';
+  }
+
+  $('overlay-collection').classList.remove('hidden');
+}
+
+function advanceCollection() {
+  $('overlay-collection').classList.add('hidden');
+  const nextIdx = currentCollectionIdx + 1;
+  if (nextIdx >= COLLECTIONS.length) {
+    showEndScreen();
+  } else {
+    beginCollection(nextIdx);
+  }
+}
+
+// ── End screen ────────────────────────────────────────────────────────────────
 function showEndScreen() {
   showScreen('screen-end');
-  $('final-score').textContent = totalKeypresses;
 
-  // Build per-challenge summary
+  const grandTotal = gameMode === 'learn'
+    ? COLLECTIONS.slice(0, currentCollectionIdx + 1)
+        .flatMap(c => c.challenges)
+        .length
+    : challenges.length;
+
+  $('final-score').textContent       = totalKeypresses;
+  $('final-challenges').textContent  = grandTotal;
+
   const list = $('challenge-summary');
   if (list) {
     list.innerHTML = challenges
       .map((ch, i) => {
         const kp = challengeKeypresses[i];
+        if (kp === undefined) return '';
         const rating = getRating(kp, ch.optimalKeys);
         return `<li>
           <span class="summary-title">${ch.title}</span>
@@ -223,22 +302,22 @@ function showEndScreen() {
   }
 }
 
-// ── How-to-play ───────────────────────────────────────────────────────────────
+// ── How-to-play shortcut table ────────────────────────────────────────────────
 const SHORTCUT_TABLE = [
-  ['Ctrl+A',     'Move to beginning of line'],
-  ['Ctrl+E',     'Move to end of line'],
-  ['Ctrl+F / →', 'Move forward one character'],
-  ['Ctrl+B / ←', 'Move backward one character'],
-  ['Alt+F',      'Move forward one word'],
-  ['Alt+B',      'Move backward one word'],
-  ['Backspace',  'Delete character before cursor'],
-  ['Ctrl+D',     'Delete character at cursor'],
-  ['Ctrl+K',     'Kill (cut) to end of line'],
-  ['Ctrl+U',     'Kill from start to cursor'],
-  ['Ctrl+W',     'Kill word backward (whitespace boundary)'],
-  ['Alt+D',      'Kill word forward (alphanumeric boundary)'],
-  ['Ctrl+Y',     'Yank (paste) last killed text'],
-  ['Ctrl+T',     'Transpose characters around cursor'],
+  ['Ctrl+A',           'Move to beginning of line'],
+  ['Ctrl+E',           'Move to end of line'],
+  ['Ctrl+F / →',       'Move forward one character'],
+  ['Ctrl+B / ←',       'Move backward one character'],
+  ['Alt+F',            'Move forward one word'],
+  ['Alt+B',            'Move backward one word'],
+  ['Backspace',        'Delete character before cursor'],
+  ['Ctrl+D',           'Delete character at cursor'],
+  ['Ctrl+K',           'Kill (cut) to end of line'],
+  ['Ctrl+U',           'Kill from start to cursor'],
+  ['Alt+Backspace',    'Kill word backward (whitespace boundary)'],
+  ['Alt+D',            'Kill word forward (alphanumeric boundary)'],
+  ['Ctrl+Y',           'Yank (paste) last killed text'],
+  ['Ctrl+T',           'Transpose characters around cursor'],
 ];
 
 function buildShortcutTable() {
@@ -252,13 +331,9 @@ function buildShortcutTable() {
 }
 
 // ── Textarea input guard ──────────────────────────────────────────────────────
-// Prevent the textarea from accepting direct browser-injected text
-// (e.g. paste, browser autocomplete); all editing goes through our handler.
 function handleInput() {
   if (!editor) return;
   const ta = $('command-input');
-  // If the textarea was changed by something other than our handler (e.g. paste),
-  // revert it to the editor state.
   ta.value = editor.text;
   ta.setSelectionRange(editor.cursor, editor.cursor);
 }
@@ -268,29 +343,31 @@ function init() {
   buildShortcutTable();
 
   // Landing buttons
-  $('btn-start').addEventListener('click', startGame);
+  $('btn-learn').addEventListener('click', startLearn);
+  $('btn-practice').addEventListener('click', startPractice);
   $('btn-how-to').addEventListener('click', () => showScreen('screen-howto'));
   $('btn-back-from-howto').addEventListener('click', () => showScreen('screen-landing'));
 
   // Game buttons
-  $('btn-next').addEventListener('click', () => {
-    $('overlay-success').classList.add('hidden');
-    nextChallenge();
-  });
+  $('btn-next').addEventListener('click', nextChallenge);
+  $('btn-skip').addEventListener('click', nextChallenge);
 
-  $('btn-skip').addEventListener('click', () => {
-    $('overlay-success').classList.add('hidden');
-    nextChallenge();
-  });
+  // Collection-complete overlay
+  $('btn-next-collection').addEventListener('click', advanceCollection);
 
   // End screen
-  $('btn-restart').addEventListener('click', startGame);
+  $('btn-restart').addEventListener('click', () => showScreen('screen-landing'));
   $('btn-howto-end').addEventListener('click', () => showScreen('screen-howto'));
 
-  // Keyboard handler on textarea
-  const ta = $('command-input');
-  ta.addEventListener('keydown', handleKeyDown);
-  ta.addEventListener('input', handleInput);
+  // Textarea input guard (prevents browser autocomplete/paste interference)
+  $('command-input').addEventListener('input', handleInput);
+
+  // ── Global keydown handler (capture phase) ──────────────────────────────
+  // Attaching to `window` in the capture phase lets us call preventDefault()
+  // before browser default actions (e.g. Ctrl+F search, Ctrl+D bookmark).
+  // Ctrl+W (close tab) and Ctrl+T (new tab) are handled at the browser
+  // process level and CANNOT be prevented regardless of phase.
+  window.addEventListener('keydown', handleKeyDown, { capture: true });
 
   showScreen('screen-landing');
 }

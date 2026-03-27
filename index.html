@@ -29,12 +29,17 @@
             Type less. Move faster. Look like a wizard. 🧙
           </p>
           <div class="landing-btns">
-            <button id="btn-start" class="btn-primary">▶ Start Game</button>
-            <button id="btn-how-to" class="btn-secondary">? How to Play</button>
+            <button id="btn-learn"    class="btn-primary">🎓 Learning Track</button>
+            <button id="btn-practice" class="btn-secondary">🎲 Practice Mode</button>
+            <button id="btn-how-to"   class="btn-ghost">? How to Play</button>
+          </div>
+          <div class="landing-mode-info">
+            <span class="mode-desc"><strong>Learning Track</strong> — structured collections, one shortcut family at a time, finishing with graduate challenges.</span>
+            <span class="mode-desc"><strong>Practice Mode</strong> — 8 random challenges from all collections.</span>
           </div>
           <div class="shortcut-peek">
             <span class="peek-item"><kbd>Ctrl+K</kbd> kill to end</span>
-            <span class="peek-item"><kbd>Alt+F</kbd> forward word</span>
+            <span class="peek-item"><kbd>Alt+Backspace</kbd> kill word</span>
             <span class="peek-item"><kbd>Ctrl+Y</kbd> yank</span>
             <span class="peek-item"><kbd>Ctrl+T</kbd> transpose</span>
           </div>
@@ -63,10 +68,33 @@
             </thead>
             <tbody id="shortcut-tbody"></tbody>
           </table>
+
           <div class="howto-tip">
             <strong>💡 Tip:</strong> On macOS, <kbd>Alt</kbd> is <kbd>Option (⌥)</kbd>.
             In some terminals you may need to enable "Use Option as Meta key".
           </div>
+
+          <div class="browser-compat-box">
+            <p class="compat-title">⚠️ Browser compatibility</p>
+            <ul class="compat-list">
+              <li>
+                <kbd>Ctrl+W</kbd> <strong>closes the browser tab</strong> — it cannot
+                be intercepted by any web page. Use <kbd>Alt+Backspace</kbd> instead;
+                it does exactly the same thing (kill word backward).
+              </li>
+              <li>
+                <kbd>Ctrl+T</kbd> may open a new browser tab. The game intercepts it
+                where possible, but you may need to return to this tab. Challenges
+                that use it are marked with ⚠️.
+              </li>
+              <li>
+                <kbd>Ctrl+N</kbd> / <kbd>Ctrl+W</kbd> / <kbd>Ctrl+T</kbd> are
+                browser-reserved on all platforms and are noted in affected challenge
+                hints.
+              </li>
+            </ul>
+          </div>
+
           <button id="btn-back-from-howto" class="btn-secondary">← Back</button>
         </div>
       </div>
@@ -86,6 +114,8 @@
           <!-- header row -->
           <div class="game-header">
             <div class="challenge-counter">
+              <span id="collection-track" class="collection-track"></span>
+              <span id="collection-badge" class="collection-badge hidden"></span>
               Challenge <span id="challenge-num">1</span> / <span id="challenge-total">8</span>
             </div>
             <div class="keypress-display">
@@ -146,7 +176,7 @@
         </div>
       </div>
 
-      <!-- success overlay (on top of game window) -->
+      <!-- challenge success overlay -->
       <div id="overlay-success" class="overlay hidden">
         <div class="success-card">
           <div class="success-check">✓</div>
@@ -167,6 +197,20 @@
           <button id="btn-next" class="btn-primary">Next Challenge →</button>
         </div>
       </div>
+
+      <!-- collection complete overlay (learn mode only) -->
+      <div id="overlay-collection" class="overlay hidden">
+        <div class="success-card">
+          <div class="success-check coll-check">🎓</div>
+          <h3 class="success-heading">Collection Complete!</h3>
+          <p class="coll-complete-name" id="coll-complete-name"></p>
+          <p class="coll-complete-score">
+            Total keypresses so far: <strong id="coll-complete-score">0</strong>
+          </p>
+          <p class="coll-next-label" id="coll-next-label"></p>
+          <button id="btn-next-collection" class="btn-primary">Next Collection →</button>
+        </div>
+      </div>
     </div>
 
     <!-- ───────────────────────── End screen ───────────────────────────── -->
@@ -182,10 +226,11 @@
           <h2 class="end-title">Session Complete!</h2>
           <div class="end-total">
             Total keypresses: <strong id="final-score">0</strong>
+            across <strong id="final-challenges">0</strong> challenges
           </div>
           <ul id="challenge-summary" class="challenge-summary"></ul>
           <div class="end-btns">
-            <button id="btn-restart"  class="btn-primary">▶ Play Again</button>
+            <button id="btn-restart"   class="btn-primary">▶ Back to Menu</button>
             <button id="btn-howto-end" class="btn-secondary">? Shortcuts</button>
           </div>
         </div>

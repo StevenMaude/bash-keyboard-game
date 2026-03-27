@@ -377,7 +377,83 @@ kbd {
   white-space: nowrap;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ── Landing mode-info ───────────────────────────────────────────────────── */
+.landing-mode-info {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  font-size: .83rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: .75rem;
+}
+.mode-desc strong { color: var(--text); }
+
+/* ── Collection track / badge in game header ─────────────────────────────── */
+.collection-track {
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: .2rem;
+}
+.collection-badge {
+  display: inline-block;
+  background: rgba(61,232,216,.15);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: .1rem .5rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  margin-right: .5rem;
+  vertical-align: middle;
+}
+.collection-badge.hidden { display: none; }
+
+/* ── Collection-complete overlay ─────────────────────────────────────────── */
+.coll-check { font-size: 1.5rem; }
+.coll-complete-name {
+  font-family: var(--font-mono);
+  color: var(--cyan);
+  font-size: .95rem;
+  font-weight: 700;
+}
+.coll-complete-score {
+  font-size: .85rem;
+  color: var(--text-muted);
+}
+.coll-complete-score strong { color: var(--yellow); }
+.coll-next-label {
+  font-size: .85rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ── Browser compatibility box ───────────────────────────────────────────── */
+.browser-compat-box {
+  background: rgba(255,79,106,.06);
+  border: 1px solid rgba(255,79,106,.35);
+  border-radius: var(--radius-sm);
+  padding: .8rem 1rem;
+  font-size: .84rem;
+}
+.compat-title {
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: .5rem;
+}
+.compat-list {
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  color: var(--text-muted);
+}
+.compat-list kbd { color: var(--red); border-color: rgba(255,79,106,.4); }
 @media (max-width: 540px) {
   .terminal-body { padding: 1.25rem 1.25rem 1.5rem; }
   .game-title    { font-size: 2.4rem; }
